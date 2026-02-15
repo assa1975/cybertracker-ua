@@ -47,9 +47,24 @@
     background-color: #f0f4ff !important;
 }
 
-/* Navbar brand */
+/* Navbar brand with logo */
 .navbar-brand i {
     color: #FFD500;
+}
+
+.navbar-logo {
+    border-radius: 4px;
+    filter: drop-shadow(0 0 4px rgba(255, 213, 0, 0.4));
+    transition: filter 0.3s ease;
+}
+
+.navbar-logo:hover {
+    filter: drop-shadow(0 0 8px rgba(255, 213, 0, 0.7));
+}
+
+.footer-logo {
+    opacity: 0.7;
+    border-radius: 3px;
 }
 
 /* Card headers */

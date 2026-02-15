@@ -13,6 +13,7 @@ from config import (
     RSS_FEEDS, UKRAINE_KEYWORDS, ATTACK_TYPE_KEYWORDS,
     SECTOR_KEYWORDS, THREAT_ACTORS,
 )
+from ioc_extractor import extract_iocs, iocs_to_json
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +159,15 @@ def parse_entry(entry, feed_config):
     threat_actor = identify_threat_actor(combined_text)
     severity = assign_severity(attack_type, threat_actor)
 
+    # Extract IOCs from description
+    iocs = extract_iocs(f"{title} {description}")
+    ioc_json = iocs_to_json(iocs)
+
+    # Extract MITRE technique ID from IOCs if not found by keyword
+    mitre_id = None
+    if iocs.get('mitre'):
+        mitre_id = iocs['mitre'][0]  # Take first MITRE technique
+
     return {
         'title': title[:500],
         'description': description[:5000] if description else None,
@@ -168,6 +178,8 @@ def parse_entry(entry, feed_config):
         'target_sector': target_sector,
         'threat_actor': threat_actor,
         'severity': severity,
+        'ioc_indicators': ioc_json,
+        'mitre_technique_id': mitre_id,
     }
 
 

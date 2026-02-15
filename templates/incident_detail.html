@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ incident.title[:50] }} | Кібертрекер UA{% endblock %}
+{% block title %}{{ incident.title[:50] }} | Cyber Tracker UA{% endblock %}
 
 {% block content %}
 <!-- Breadcrumb -->
@@ -127,8 +127,29 @@
         </div>
         {% endif %}
 
-        <!-- IOC Indicators -->
-        {% if incident.ioc_indicators %}
+        <!-- IOC Indicators (structured) -->
+        {% set ioc_categories = incident.ioc_indicators | format_iocs %}
+        {% if ioc_categories %}
+        <div class="mt-4">
+            <h5><i class="bi bi-fingerprint"></i> IOC Індикатори</h5>
+            <div class="row g-2">
+                {% for category_name, items in ioc_categories %}
+                <div class="col-md-6">
+                    <div class="card border-0 bg-dark text-light">
+                        <div class="card-header py-1 bg-secondary bg-opacity-50">
+                            <small class="fw-bold">{{ category_name }} ({{ items|length }})</small>
+                        </div>
+                        <div class="card-body py-2" style="max-height: 200px; overflow-y: auto;">
+                            {% for item in items %}
+                            <code class="d-block text-success small">{{ item }}</code>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% elif incident.ioc_indicators %}
         <div class="mt-4">
             <h5><i class="bi bi-fingerprint"></i> IOC Індикатори</h5>
             <pre class="bg-dark text-success p-3 rounded"><code>{{ incident.ioc_indicators }}</code></pre>

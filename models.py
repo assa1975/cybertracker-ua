@@ -25,6 +25,7 @@ class Incident(Base):
     full_text = Column(Text, nullable=True)
     full_text_uk = Column(Text, nullable=True)
     images = Column(Text, nullable=True)
+    neo4j_synced = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
@@ -54,6 +55,7 @@ class Incident(Base):
             'full_text': self.full_text,
             'full_text_uk': self.full_text_uk,
             'images': self.images,
+            'neo4j_synced': self.neo4j_synced.isoformat() if self.neo4j_synced else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 

@@ -38,6 +38,9 @@ def migrate_db():
         if 'images' not in columns:
             conn.execute(text('ALTER TABLE incidents ADD COLUMN images TEXT'))
             logger.info("Added column images to incidents")
+        if 'neo4j_synced' not in columns:
+            conn.execute(text('ALTER TABLE incidents ADD COLUMN neo4j_synced DATETIME'))
+            logger.info("Added column neo4j_synced to incidents")
 
 
 def get_session():

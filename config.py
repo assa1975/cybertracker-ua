@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+# Load .env file if exists
+load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -7,7 +11,38 @@ DATABASE_PATH = os.path.join(BASE_DIR, 'data', 'cybertracker.db')
 DATABASE_URI = f"sqlite:///{DATABASE_PATH}"
 
 # --- Flask ---
-SECRET_KEY = 'cybertracker-ua-local-dev-key'
+SECRET_KEY = os.getenv('SECRET_KEY', 'cybertracker-ua-local-dev-key')
+
+# --- Neo4j Graph Database ---
+NEO4J_URI = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
+NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
+NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD', '')
+NEO4J_ENABLED = bool(NEO4J_PASSWORD)
+
+# --- Twitter/X API ---
+TWITTER_BEARER_TOKEN = os.getenv('TWITTER_BEARER_TOKEN', '')
+TWITTER_ENABLED = bool(TWITTER_BEARER_TOKEN)
+
+# Accounts to monitor for Ukraine cyber news
+TWITTER_ACCOUNTS = [
+    'ABORIPUU',         # CERT-UA official
+    'dsaboripuu',       # SSSCIP Ukraine
+    'TheRecord_Media',
+    'BleachingComputer',  # BleepingComputer
+    'CISAgov',
+    'MsftSecIntel',     # Microsoft Threat Intelligence
+    'MandiantIntel',
+    'GoogleTAG',        # Google Threat Analysis Group
+]
+TWITTER_FETCH_INTERVAL_MINUTES = 15
+
+# --- VirusTotal ---
+VIRUSTOTAL_API_KEY = os.getenv('VIRUSTOTAL_API_KEY', '')
+VIRUSTOTAL_ENABLED = bool(VIRUSTOTAL_API_KEY)
+
+# --- AbuseIPDB ---
+ABUSEIPDB_API_KEY = os.getenv('ABUSEIPDB_API_KEY', '')
+ABUSEIPDB_ENABLED = bool(ABUSEIPDB_API_KEY)
 
 # --- RSS Feeds ---
 RSS_FEEDS = [
@@ -38,6 +73,43 @@ RSS_FEEDS = [
     {
         'name': 'The Hacker News',
         'url': 'https://feeds.feedburner.com/TheHackersNews',
+        'language': 'en',
+        'always_relevant': False,
+    },
+    # --- New Threat Intelligence Feeds ---
+    {
+        'name': 'Recorded Future',
+        'url': 'https://www.recordedfuture.com/feed',
+        'language': 'en',
+        'always_relevant': False,
+    },
+    {
+        'name': 'Google TAG',
+        'url': 'https://blog.google/threat-analysis-group/rss/',
+        'language': 'en',
+        'always_relevant': False,
+    },
+    {
+        'name': 'Microsoft Security',
+        'url': 'https://www.microsoft.com/en-us/security/blog/feed/',
+        'language': 'en',
+        'always_relevant': False,
+    },
+    {
+        'name': 'CISA Alerts',
+        'url': 'https://www.cisa.gov/cybersecurity-advisories/all.xml',
+        'language': 'en',
+        'always_relevant': False,
+    },
+    {
+        'name': 'Cisco Talos',
+        'url': 'https://blog.talosintelligence.com/rss/',
+        'language': 'en',
+        'always_relevant': False,
+    },
+    {
+        'name': 'Mandiant',
+        'url': 'https://www.mandiant.com/resources/blog/rss.xml',
         'language': 'en',
         'always_relevant': False,
     },

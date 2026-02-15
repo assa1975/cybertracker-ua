@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Граф зв'язків | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Left Panel: Controls & Stats -->
+    <div class="col-lg-3 mb-3">
+        <!-- Neo4j Status -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-ua-blue text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-diagram-3"></i> Статус Neo4j</h6>
+            </div>
+            <div class="card-body py-2">
+                <div id="neo4j-status" class="text-center">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <small class="ms-2">Перевірка...</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-ua-blue text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-gear"></i> Налаштування</h6>
+            </div>
+            <div class="card-body">
+                <!-- Layout -->
+                <label class="form-label small fw-bold">Layout</label>
+                <select id="layout-select" class="form-select form-select-sm mb-2">
+                    <option value="cose" selected>CoSE (Force-Directed)</option>
+                    <option value="circle">Circle</option>
+                    <option value="grid">Grid</option>
+                    <option value="breadthfirst">Tree</option>
+                    <option value="concentric">Concentric</option>
+                </select>
+
+                <!-- Filter by type -->
+                <label class="form-label small fw-bold">Тип вузлів</label>
+                <div class="mb-2" id="type-filters">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input type-filter" type="checkbox" value="Incident" checked>
+                        <label class="form-check-label small">Інциденти</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input type-filter" type="checkbox" value="ThreatActor" checked>
+                        <label class="form-check-label small">Актори</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input type-filter" type="checkbox" value="Sector" checked>
+                        <label class="form-check-label small">Сектори</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input type-filter" type="checkbox" value="AttackType" checked>
+                        <label class="form-check-label small">Типи атак</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input type-filter" type="checkbox" value="MITRETechnique" checked>
+                        <label class="form-check-label small">MITRE</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input type-filter" type="checkbox" value="IOCIndicator" checked>
+                        <label class="form-check-label small">IOC</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input type-filter" type="checkbox" value="Source" checked>
+                        <label class="form-check-label small">Джерела</label>
+                    </div>
+                </div>
+
+                <!-- Centrality metric -->
+                <label class="form-label small fw-bold">Метрика центральності</label>
+                <select id="centrality-select" class="form-select form-select-sm mb-2">
+                    <option value="degree" selected>Degree</option>
+                    <option value="betweenness">Betweenness</option>
+                    <option value="closeness">Closeness</option>
+                    <option value="pagerank">PageRank</option>
+                </select>
+
+                <!-- Search -->
+                <label class="form-label small fw-bold">Пошук вузлів</label>
+                <input type="text" id="node-search" class="form-control form-control-sm mb-2"
+                       placeholder="Введіть назву...">
+
+                <!-- Limit -->
+                <label class="form-label small fw-bold">Ліміт вузлів</label>
+                <input type="number" id="node-limit" class="form-control form-control-sm mb-2"
+                       value="300" min="50" max="2000" step="50">
+
+                <!-- Actions -->
+                <div class="d-grid gap-1 mt-2">
+                    <button id="btn-load" class="btn btn-primary btn-sm">
+                        <i class="bi bi-play-fill"></i> Завантажити граф
+                    </button>
+                    <button id="btn-sync" class="btn btn-warning btn-sm">
+                        <i class="bi bi-arrow-repeat"></i> Синхронізація
+                    </button>
+                    <button id="btn-communities" class="btn btn-info btn-sm">
+                        <i class="bi bi-people"></i> Спільноти
+                    </button>
+                    <button id="btn-fit" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrows-fullscreen"></i> Вмістити
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-ua-blue text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-palette"></i> Легенда</h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="d-flex flex-wrap gap-1">
+                    <span class="badge" style="background:#005BBB">Інцидент</span>
+                    <span class="badge" style="background:#dc3545">Актор</span>
+                    <span class="badge" style="background:#28a745">Сектор</span>
+                    <span class="badge" style="background:#fd7e14">Тип атаки</span>
+                    <span class="badge" style="background:#6f42c1">MITRE</span>
+                    <span class="badge" style="background:#6c757d">IOC</span>
+                    <span class="badge" style="background:#0dcaf0;color:#000">Джерело</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Node Details -->
+        <div class="card shadow-sm" id="node-details-card" style="display:none;">
+            <div class="card-header bg-ua-blue text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Деталі вузла</h6>
+            </div>
+            <div class="card-body py-2" id="node-details">
+            </div>
+        </div>
+
+        <!-- Graph Stats -->
+        <div class="card shadow-sm mt-3" id="graph-stats-card" style="display:none;">
+            <div class="card-header bg-ua-blue text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Статистика</h6>
+            </div>
+            <div class="card-body py-2" id="graph-stats">
+            </div>
+        </div>
+    </div>
+
+    <!-- Main: Graph Canvas -->
+    <div class="col-lg-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-ua-blue text-white d-flex justify-content-between align-items-center py-2">
+                <h5 class="mb-0"><i class="bi bi-diagram-3-fill"></i> Граф зв'язків кіберінцидентів</h5>
+                <span id="graph-info" class="badge bg-light text-dark">Не завантажено</span>
+            </div>
+            <div class="card-body p-0">
+                <div id="cy" style="height: 650px; background: #1a1a2e;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/layout-base@2.0.1/layout-base.js"></script>
+<script src="https://unpkg.com/cose-base@2.2.0/cose-base.js"></script>
+<script src="{{ url_for('static', filename='js/graph.js') }}"></script>
+{% endblock %}

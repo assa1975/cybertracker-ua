@@ -13,7 +13,9 @@ from mitre_data import get_technique_name
 from config import (
     SECRET_KEY, SEVERITY_LEVELS, ATTACK_TYPE_KEYWORDS,
     SECTOR_KEYWORDS, INCIDENTS_PER_PAGE, RSS_FEEDS, BASE_DIR,
+    TWITTER_ENABLED, VIRUSTOTAL_ENABLED, ABUSEIPDB_ENABLED,
 )
+from ioc_extractor import format_iocs_display
 
 
 def create_app():
@@ -53,6 +55,15 @@ def create_app():
             return result
         except (json.JSONDecodeError, TypeError):
             return []
+
+    @app.template_filter('format_iocs')
+    def format_iocs_filter(ioc_json):
+        """Format IOC JSON for template display."""
+        return format_iocs_display(ioc_json)
+
+    # Register graph API blueprint
+    from graph_routes import graph_bp
+    app.register_blueprint(graph_bp)
 
     register_routes(app)
     return app
@@ -205,7 +216,7 @@ def register_routes(app):
             # Filter options
             attack_types = list(ATTACK_TYPE_KEYWORDS.keys())
             sectors = list(SECTOR_KEYWORDS.keys())
-            sources = [f['name'] for f in RSS_FEEDS]
+            sources = [f['name'] for f in RSS_FEEDS] + ['Twitter/X', 'Ручне введення']
 
             return render_template('incidents.html',
                 incidents=incidents,
@@ -396,6 +407,42 @@ def register_routes(app):
             )
         except Exception as e:
             flash(f'Помилка генерації звіту: {e}', 'danger')
+        return redirect(url_for('dashboard'))
+
+    @app.route('/graph')
+    def graph_page():
+        return render_template('graph.html')
+
+    @app.route('/fetch-twitter')
+    def trigger_fetch_twitter():
+        if not TWITTER_ENABLED:
+            flash('Twitter API не налаштовано. Встановіть TWITTER_BEARER_TOKEN в .env', 'warning')
+            return redirect(url_for('dashboard'))
+        try:
+            from twitter_fetcher import fetch_all_twitter
+            result = fetch_all_twitter()
+            flash(
+                f"Twitter: {result.get('total_added', 0)} нових з {result.get('total_found', 0)} знайдених.",
+                'success'
+            )
+        except Exception as e:
+            flash(f'Помилка Twitter: {e}', 'danger')
+        return redirect(url_for('dashboard'))
+
+    @app.route('/enrich')
+    def trigger_enrich():
+        if not VIRUSTOTAL_ENABLED and not ABUSEIPDB_ENABLED:
+            flash('API збагачення не налаштовано. Встановіть ключі в .env', 'warning')
+            return redirect(url_for('dashboard'))
+        try:
+            from ioc_enrichment import enrich_all_unenriched
+            result = enrich_all_unenriched()
+            flash(
+                f"Збагачено {result.get('enriched', 0)} з {result.get('total', 0)} інцидентів.",
+                'success'
+            )
+        except Exception as e:
+            flash(f'Помилка збагачення IOC: {e}', 'danger')
         return redirect(url_for('dashboard'))
 
     @app.route('/images/<path:path>')

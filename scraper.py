@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from models import Incident
 from database import get_session
 from config import BASE_DIR
+from ioc_extractor import extract_iocs, iocs_to_json, merge_ioc_json
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +20,19 @@ HEADERS = {'User-Agent': 'CyberTrackerUA/1.0 (article scraper)'}
 
 # Content selectors per source (priority order)
 CONTENT_SELECTORS = [
-    # Specific sites
+    # Specific sites (original)
     {'domain': 'cert.gov.ua', 'selectors': ['.article-content', '.news-detail', 'article']},
     {'domain': 'bleepingcomputer.com', 'selectors': ['.articleBody', '.article_section']},
     {'domain': 'therecord.media', 'selectors': ['.article-content', 'article .content']},
     {'domain': 'securityweek.com', 'selectors': ['.article-content', '.entry-content']},
     {'domain': 'thehackernews.com', 'selectors': ['.articlebody', '#articlebody', '.storycontent']},
+    # New threat intel sources
+    {'domain': 'recordedfuture.com', 'selectors': ['.entry-content', '.post-content', 'article']},
+    {'domain': 'blog.google', 'selectors': ['.article-body', '.post-content', 'article']},
+    {'domain': 'microsoft.com', 'selectors': ['.entry-content', '.article-content', '.content-body', 'article']},
+    {'domain': 'cisa.gov', 'selectors': ['.c-field--type-text-long', '.l-full__main', 'article', 'main']},
+    {'domain': 'talosintelligence.com', 'selectors': ['.post-body', '.entry-content', 'article']},
+    {'domain': 'mandiant.com', 'selectors': ['.article-content', '.blog-content', '.entry-content', 'article']},
 ]
 
 # Generic selectors (fallback)
@@ -231,6 +239,17 @@ def scrape_and_save(incident_id):
         image_paths = download_images(result['image_urls'], incident.id)
         if image_paths:
             incident.images = json.dumps(image_paths)
+
+        # Extract IOCs from full text and merge with existing
+        iocs = extract_iocs(result['full_text'])
+        ioc_json = iocs_to_json(iocs)
+        if ioc_json:
+            incident.ioc_indicators = merge_ioc_json(incident.ioc_indicators, iocs)
+            logger.info(f"Extracted IOCs from incident #{incident.id}: {sum(len(v) for v in iocs.values() if v)} indicators")
+
+        # Extract MITRE technique if not already set
+        if not incident.mitre_technique_id and iocs.get('mitre'):
+            incident.mitre_technique_id = iocs['mitre'][0]
 
         session.commit()
         logger.info(f"Scraped incident #{incident.id}: {len(result['full_text'])} chars, {len(image_paths)} images")
