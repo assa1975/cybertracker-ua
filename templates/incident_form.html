@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Додати інцидент | Кібертрекер UA{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-plus-circle"></i> Додати інцидент</h2>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('incident_new') }}">
+            <div class="row">
+                <!-- Left column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="title" class="form-label fw-bold">Назва *</label>
+                        <input type="text" class="form-control" id="title" name="title" required
+                               placeholder="Назва кіберінциденту">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label fw-bold">Опис</label>
+                        <textarea class="form-control" id="description" name="description" rows="5"
+                                  placeholder="Детальний опис інциденту..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="date" class="form-label fw-bold">Дата інциденту</label>
+                        <input type="date" class="form-control" id="date" name="date">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="source" class="form-label fw-bold">Джерело</label>
+                        <input type="text" class="form-control" id="source" name="source"
+                               placeholder="Назва джерела (наприклад, CERT-UA)">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="source_url" class="form-label fw-bold">URL джерела</label>
+                        <input type="url" class="form-control" id="source_url" name="source_url"
+                               placeholder="https://...">
+                    </div>
+                </div>
+
+                <!-- Right column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="attack_type" class="form-label fw-bold">Тип атаки</label>
+                        <select class="form-select" id="attack_type" name="attack_type">
+                            <option value="">Оберіть тип</option>
+                            {% for t in attack_types %}
+                                <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="target_sector" class="form-label fw-bold">Цільовий сектор</label>
+                        <select class="form-select" id="target_sector" name="target_sector">
+                            <option value="">Оберіть сектор</option>
+                            {% for sec in sectors %}
+                                <option value="{{ sec }}">{{ sec }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="severity" class="form-label fw-bold">Критичність</label>
+                        <select class="form-select" id="severity" name="severity">
+                            {% for s in severity_levels %}
+                                <option value="{{ s }}" {% if s == 'Середній' %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="threat_actor" class="form-label fw-bold">Загрозливий актор</label>
+                        <input type="text" class="form-control" id="threat_actor" name="threat_actor"
+                               placeholder="Наприклад: APT28, Sandworm, UAC-0010">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="mitre_technique_id" class="form-label fw-bold">MITRE ATT&CK ID</label>
+                        <input type="text" class="form-control" id="mitre_technique_id" name="mitre_technique_id"
+                               placeholder="Наприклад: T1566">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ioc_indicators" class="form-label fw-bold">IOC індикатори</label>
+                        <textarea class="form-control" id="ioc_indicators" name="ioc_indicators" rows="4"
+                                  placeholder="Один IOC на рядок&#10;Наприклад:&#10;192.168.1.1&#10;malware.exe&#10;hash:abc123..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Зберегти інцидент
+                </button>
+                <a href="{{ url_for('incidents_list') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Скасувати
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Інциденти | Кібертрекер UA{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-list-ul"></i> Інциденти <span class="badge bg-secondary">{{ total }}</span></h2>
+
+<!-- Filter Form -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('incidents_list') }}">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="q" value="{{ q }}"
+                           placeholder="Пошук за ключовими словами...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="attack_type">
+                        <option value="">Тип атаки</option>
+                        {% for t in attack_types %}
+                            <option value="{{ t }}" {% if attack_type == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="severity">
+                        <option value="">Критичність</option>
+                        {% for s in severity_levels %}
+                            <option value="{{ s }}" {% if severity == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="source">
+                        <option value="">Джерело</option>
+                        {% for src in sources %}
+                            <option value="{{ src }}" {% if source == src %}selected{% endif %}>{{ src }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="sector">
+                        <option value="">Сектор</option>
+                        {% for sec in sectors %}
+                            <option value="{{ sec }}" {% if sector == sec %}selected{% endif %}>{{ sec }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row g-2 mt-1">
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_from" value="{{ date_from }}"
+                           placeholder="Дата від">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_to" value="{{ date_to }}"
+                           placeholder="Дата до">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Фільтрувати
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ url_for('incidents_list') }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Скинути
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Incidents Table -->
+{% if incidents %}
+<div class="table-responsive">
+    <table class="table table-hover shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Дата</th>
+                <th>Назва</th>
+                <th>Тип</th>
+                <th>Сектор</th>
+                <th>Джерело</th>
+                <th>Критичність</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inc in incidents %}
+            <tr class="cursor-pointer" onclick="window.location='{{ url_for('incident_detail', incident_id=inc.id) }}'">
+                <td class="text-nowrap">{{ inc.date.strftime('%d.%m.%Y') if inc.date else '—' }}</td>
+                <td>
+                    {{ inc.title[:100] }}{% if inc.title|length > 100 %}...{% endif %}
+                    {% if inc.threat_actor %}
+                        <br><small class="text-danger"><i class="bi bi-person-fill"></i> {{ inc.threat_actor }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if inc.attack_type %}
+                        <span class="badge bg-secondary">{{ inc.attack_type }}</span>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td><small>{{ inc.target_sector or '—' }}</small></td>
+                <td><small>{{ inc.source or '—' }}</small></td>
+                <td>
+                    {% if inc.severity %}
+                        <span class="badge severity-{{ inc.severity|severity_class }}">{{ inc.severity }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page - 1 }}&q={{ q }}&attack_type={{ attack_type }}&severity={{ severity }}&source={{ source }}&sector={{ sector }}&date_from={{ date_from }}&date_to={{ date_to }}">
+                &laquo; Назад
+            </a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+            {% if p >= page - 3 and p <= page + 3 %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}&q={{ q }}&attack_type={{ attack_type }}&severity={{ severity }}&source={{ source }}&sector={{ sector }}&date_from={{ date_from }}&date_to={{ date_to }}">
+                    {{ p }}
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page + 1 }}&q={{ q }}&attack_type={{ attack_type }}&severity={{ severity }}&source={{ source }}&sector={{ sector }}&date_from={{ date_from }}&date_to={{ date_to }}">
+                Вперед &raquo;
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-search fs-1"></i>
+    <p class="mt-2">Інцидентів за заданими фільтрами не знайдено.</p>
+</div>
+{% endif %}
+{% endblock %}

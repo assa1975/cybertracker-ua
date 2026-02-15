@@ -1,0 +1,108 @@
+/* Ukrainian colors */
+.bg-ua-blue {
+    background-color: #005BBB !important;
+}
+
+.bg-ua-yellow {
+    background-color: #FFD500 !important;
+}
+
+/* Severity badges */
+.severity-critical {
+    background-color: #dc3545 !important;
+    color: #fff;
+}
+
+.severity-high {
+    background-color: #fd7e14 !important;
+    color: #fff;
+}
+
+.severity-medium {
+    background-color: #ffc107 !important;
+    color: #000;
+}
+
+.severity-low {
+    background-color: #28a745 !important;
+    color: #fff;
+}
+
+/* Stat cards */
+.stat-card {
+    transition: transform 0.2s;
+    border-left: 4px solid #005BBB !important;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+/* Clickable rows */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-pointer:hover {
+    background-color: #f0f4ff !important;
+}
+
+/* Navbar brand */
+.navbar-brand i {
+    color: #FFD500;
+}
+
+/* Card headers */
+.card-header.bg-ua-blue {
+    border-bottom: 3px solid #FFD500;
+}
+
+/* Table */
+.table th {
+    font-weight: 600;
+}
+
+/* Footer */
+footer {
+    border-top: 3px solid #FFD500;
+}
+
+/* Form control focus */
+.form-control:focus,
+.form-select:focus {
+    border-color: #005BBB;
+    box-shadow: 0 0 0 0.2rem rgba(0, 91, 187, 0.25);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stat-card .card-body h3 {
+        font-size: 1.5rem;
+    }
+
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+
+/* Pre/code blocks for IOC */
+pre {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Badge improvements */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Breadcrumb */
+.breadcrumb-item a {
+    color: #005BBB;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
