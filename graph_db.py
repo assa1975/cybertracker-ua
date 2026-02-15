@@ -23,9 +23,10 @@ def get_driver():
 
     try:
         from neo4j import GraphDatabase
+        auth = (NEO4J_USER, NEO4J_PASSWORD) if NEO4J_PASSWORD else None
         _driver = GraphDatabase.driver(
             NEO4J_URI,
-            auth=(NEO4J_USER, NEO4J_PASSWORD),
+            auth=auth,
             max_connection_lifetime=3600,
         )
         # Verify connectivity
