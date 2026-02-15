@@ -33,6 +33,7 @@ CONTENT_SELECTORS = [
     {'domain': 'cisa.gov', 'selectors': ['.c-field--type-text-long', '.l-full__main', 'article', 'main']},
     {'domain': 'talosintelligence.com', 'selectors': ['.post-body', '.entry-content', 'article']},
     {'domain': 'mandiant.com', 'selectors': ['.article-content', '.blog-content', '.entry-content', 'article']},
+    {'domain': 'linkedin.com', 'selectors': ['.feed-shared-update-v2__description', '.break-words', 'article']},
 ]
 
 # Generic selectors (fallback)

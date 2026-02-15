@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Аналіз документів | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-file-earmark-pdf"></i> Аналіз документів <span class="badge bg-secondary">{{ total }}</span></h2>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary"><i class="bi bi-files"></i></h5>
+                <h3>{{ total_all }}</h3>
+                <small class="text-muted">Документів</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title text-danger"><i class="bi bi-fingerprint"></i></h5>
+                <h3>{{ total_iocs }}</h3>
+                <small class="text-muted">IOC знайдено</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info"><i class="bi bi-file-earmark-text"></i></h5>
+                <h3>{{ total_pages_all }}</h3>
+                <small class="text-muted">Сторінок оброблено</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center border-primary">
+            <div class="card-body">
+                <h5 class="card-title text-success"><i class="bi bi-cloud-upload"></i></h5>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-upload"></i> Завантажити
+                </button>
+                <br><small class="text-muted mt-1">PDF, TXT, CSV</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter + Search -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('documents_list') }}">
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="q" value="{{ q }}"
+                           placeholder="Пошук за назвою, акторами, описом...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="doc_type">
+                        <option value="">Тип файлу</option>
+                        <option value="pdf" {% if doc_type == 'pdf' %}selected{% endif %}>PDF</option>
+                        <option value="txt" {% if doc_type == 'txt' %}selected{% endif %}>TXT</option>
+                        <option value="csv" {% if doc_type == 'csv' %}selected{% endif %}>CSV</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex gap-1">
+                        <a href="{{ url_for('documents_list') }}" class="btn btn-outline-secondary flex-fill" title="Скинути">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                        <button type="button" class="btn btn-success flex-fill" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                            <i class="bi bi-upload"></i> Завантажити PDF
+                        </button>
+                        <a href="{{ url_for('trigger_sync_all_graph') }}" class="btn btn-warning flex-fill" title="Синхронізувати все в Neo4j">
+                            <i class="bi bi-diagram-3"></i> Синх. граф
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-cloud-upload"></i> Завантажити документ для аналізу</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('document_upload') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Оберіть файл</label>
+                        <input type="file" class="form-control" id="file" name="file"
+                               accept=".pdf,.txt,.csv" required>
+                        <div class="form-text">
+                            Максимум {{ max_size_mb }} МБ. Формати: {{ allowed_extensions|join(', ') }}
+                        </div>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Система автоматично витягне з документа:
+                        <ul class="mb-0 mt-1">
+                            <li>IOC індикатори (IP, домени, хеші, URL, CVE)</li>
+                            <li>Загрозливі актори (APT28, Sandworm, тощо)</li>
+                            <li>Типи атак та цільові сектори</li>
+                            <li>MITRE ATT&CK техніки</li>
+                            <li>Ключові слова та мову документа</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Завантажити та аналізувати
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Documents Table -->
+{% if docs %}
+<div class="table-responsive">
+    <table class="table table-hover shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Документ</th>
+                <th>Тип</th>
+                <th>Сторінок</th>
+                <th>IOC</th>
+                <th>Актори</th>
+                <th>Атаки</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in docs %}
+            <tr class="cursor-pointer" onclick="window.location='{{ url_for('document_detail', doc_id=doc.id) }}'">
+                <td>
+                    <i class="bi bi-file-earmark-pdf text-danger"></i>
+                    <strong>{{ doc.original_name[:50] }}{% if doc.original_name|length > 50 %}...{% endif %}</strong>
+                    <br>
+                    <small class="text-muted">{{ (doc.file_size / 1024)|int }} KB</small>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">{{ doc.doc_type|upper }}</span>
+                </td>
+                <td class="text-center">{{ doc.page_count }}</td>
+                <td>
+                    {% if doc.ioc_count > 0 %}
+                        <span class="badge bg-danger">{{ doc.ioc_count }}</span>
+                    {% else %}
+                        <span class="text-muted">0</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if doc.threat_actors %}
+                        {% for actor in doc.threat_actors.split(',')[:2] %}
+                            <span class="badge bg-warning text-dark" style="font-size: 0.7em;">{{ actor.strip()[:25] }}</span>
+                        {% endfor %}
+                        {% if doc.threat_actors.split(',')|length > 2 %}
+                            <span class="badge bg-light text-muted border" style="font-size: 0.7em;">+{{ doc.threat_actors.split(',')|length - 2 }}</span>
+                        {% endif %}
+                    {% else %}
+                        <small class="text-muted">—</small>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if doc.attack_types %}
+                        {% for at in doc.attack_types.split(',')[:2] %}
+                            <span class="badge bg-info text-dark" style="font-size: 0.7em;">{{ at.strip()[:20] }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <small class="text-muted">—</small>
+                    {% endif %}
+                </td>
+                <td class="text-nowrap">
+                    <small>{{ doc.created_at.strftime('%d.%m.%Y %H:%M') if doc.created_at else '' }}</small>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page - 1 }}&q={{ q }}&doc_type={{ doc_type }}">
+                &laquo; Назад
+            </a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+            {% if p >= page - 3 and p <= page + 3 %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}&q={{ q }}&doc_type={{ doc_type }}">
+                    {{ p }}
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page + 1 }}&q={{ q }}&doc_type={{ doc_type }}">
+                Вперед &raquo;
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-file-earmark-pdf fs-1"></i>
+    <p class="mt-2">Документів ще не завантажено.</p>
+    <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
+        <i class="bi bi-upload"></i> Завантажити перший документ
+    </button>
+</div>
+{% endif %}
+{% endblock %}

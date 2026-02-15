@@ -19,9 +19,10 @@ NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
 NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD', '')
 NEO4J_ENABLED = bool(os.getenv('NEO4J_URI') or os.getenv('NEO4J_PASSWORD'))
 
-# --- Twitter/X API ---
+# --- Twitter/X API --- (temporarily disabled)
 TWITTER_BEARER_TOKEN = os.getenv('TWITTER_BEARER_TOKEN', '')
-TWITTER_ENABLED = bool(TWITTER_BEARER_TOKEN)
+# TWITTER_ENABLED = bool(TWITTER_BEARER_TOKEN)
+TWITTER_ENABLED = False  # TODO: uncomment when TWITTER_BEARER_TOKEN is configured
 
 # Accounts to monitor for Ukraine cyber news
 TWITTER_ACCOUNTS = [
@@ -35,6 +36,24 @@ TWITTER_ACCOUNTS = [
     'GoogleTAG',        # Google Threat Analysis Group
 ]
 TWITTER_FETCH_INTERVAL_MINUTES = 15
+
+# --- LinkedIn / Google Custom Search --- (temporarily disabled)
+GOOGLE_CSE_API_KEY = os.getenv('GOOGLE_CSE_API_KEY', '')
+GOOGLE_CSE_ID = os.getenv('GOOGLE_CSE_ID', '')
+# LINKEDIN_ENABLED = bool(GOOGLE_CSE_API_KEY and GOOGLE_CSE_ID)
+LINKEDIN_ENABLED = False  # TODO: uncomment when Google Custom Search API is enabled
+
+LINKEDIN_SEARCH_QUERIES = [
+    'ukraine cyber attack site:linkedin.com/posts',
+    'ukraine cybersecurity threat site:linkedin.com/posts',
+    'CERT-UA site:linkedin.com/posts',
+    'sandworm gamaredon APT ukraine site:linkedin.com/posts',
+    'ukraine malware phishing site:linkedin.com/posts',
+    'ukraine critical infrastructure cyber site:linkedin.com/posts',
+]
+LINKEDIN_FETCH_INTERVAL_MINUTES = 120
+LINKEDIN_RESULTS_PER_QUERY = 10
+LINKEDIN_DATE_RESTRICT = 'd3'
 
 # --- VirusTotal ---
 VIRUSTOTAL_API_KEY = os.getenv('VIRUSTOTAL_API_KEY', '')
@@ -175,3 +194,39 @@ FETCH_INTERVAL_MINUTES = 30
 
 # --- Pagination ---
 INCIDENTS_PER_PAGE = 20
+
+# --- IOC Threat Intelligence Feeds ---
+IOC_FEEDS_ENABLED = True
+IOC_FETCH_INTERVAL_MINUTES = 60
+IOC_PER_PAGE = 30
+
+IOC_THREAT_LEVELS = ['critical', 'high', 'medium', 'low', 'unknown']
+IOC_THREAT_LEVEL_LABELS = {
+    'critical': 'Критичний',
+    'high': 'Високий',
+    'medium': 'Середній',
+    'low': 'Низький',
+    'unknown': 'Невідомо',
+}
+IOC_TYPE_LABELS = {
+    'ipv4': 'IPv4', 'ipv6': 'IPv6', 'domain': 'Домен', 'url': 'URL',
+    'hash_md5': 'MD5', 'hash_sha1': 'SHA1', 'hash_sha256': 'SHA256',
+    'email': 'Email', 'cve': 'CVE',
+}
+
+# --- Document Analysis (PDF) ---
+UPLOAD_DIR = os.path.join(BASE_DIR, 'data', 'uploads')
+ALLOWED_EXTENSIONS = {'pdf', 'txt', 'csv', 'docx'}
+MAX_UPLOAD_SIZE_MB = 50
+DOCS_PER_PAGE = 20
+
+# MITRE ATT&CK Technique patterns for text extraction
+MITRE_TECHNIQUE_PATTERNS = [
+    'T1566', 'T1059', 'T1053', 'T1071', 'T1105',
+    'T1027', 'T1047', 'T1082', 'T1083', 'T1547',
+    'T1574', 'T1070', 'T1036', 'T1553', 'T1218',
+    'T1055', 'T1003', 'T1078', 'T1098', 'T1543',
+    'T1564', 'T1562', 'T1572', 'T1041', 'T1486',
+    'T1490', 'T1560', 'T1567', 'T1133', 'T1190',
+    'T1203', 'T1569', 'T1078', 'T1021', 'T1091',
+]

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}IOC: {{ ioc.value[:50] }} | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('ioc_list') }}">IOC Indicators</a></li>
+        <li class="breadcrumb-item active">{{ ioc.value[:60] }}{% if ioc.value|length > 60 %}...{% endif %}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- IOC Info Card -->
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header
+                {% if ioc.threat_level == 'critical' %}bg-danger text-white
+                {% elif ioc.threat_level == 'high' %}bg-warning text-dark
+                {% elif ioc.threat_level == 'medium' %}bg-primary text-white
+                {% elif ioc.threat_level == 'low' %}bg-success text-white
+                {% else %}bg-secondary text-white{% endif %}">
+                <i class="bi bi-fingerprint"></i> IOC Indicator
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <small class="text-muted">Тип</small><br>
+                    <span class="badge bg-info text-dark">{{ type_labels.get(ioc.ioc_type, ioc.ioc_type) }}</span>
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Джерело</small><br>
+                    <strong>{{ ioc.source or '—' }}</strong>
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Рівень загрози</small><br>
+                    {% if ioc.threat_level == 'critical' %}
+                        <span class="badge bg-danger">{{ threat_level_labels.get(ioc.threat_level, '') }}</span>
+                    {% elif ioc.threat_level == 'high' %}
+                        <span class="badge bg-warning text-dark">{{ threat_level_labels.get(ioc.threat_level, '') }}</span>
+                    {% elif ioc.threat_level == 'medium' %}
+                        <span class="badge bg-primary">{{ threat_level_labels.get(ioc.threat_level, '') }}</span>
+                    {% elif ioc.threat_level == 'low' %}
+                        <span class="badge bg-success">{{ threat_level_labels.get(ioc.threat_level, '') }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ threat_level_labels.get(ioc.threat_level, 'N/A') }}</span>
+                    {% endif %}
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Confidence</small><br>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar
+                            {% if ioc.confidence >= 75 %}bg-danger
+                            {% elif ioc.confidence >= 50 %}bg-warning
+                            {% elif ioc.confidence >= 25 %}bg-info
+                            {% else %}bg-secondary{% endif %}"
+                            role="progressbar"
+                            style="width: {{ ioc.confidence or 0 }}%">
+                            {{ ioc.confidence or 0 }}%
+                        </div>
+                    </div>
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Вперше помічено</small><br>
+                    {{ ioc.first_seen.strftime('%d.%m.%Y %H:%M') if ioc.first_seen else '—' }}
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Востаннє помічено</small><br>
+                    {{ ioc.last_seen.strftime('%d.%m.%Y %H:%M') if ioc.last_seen else '—' }}
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Додано в базу</small><br>
+                    {{ ioc.created_at.strftime('%d.%m.%Y %H:%M') if ioc.created_at else '—' }}
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-8">
+        <!-- Value -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-code-square"></i> Значення IOC
+            </div>
+            <div class="card-body">
+                <code class="d-block p-3 bg-light rounded text-break" style="font-size: 1.1em; word-break: break-all;">{{ ioc.value }}</code>
+            </div>
+        </div>
+
+        <!-- Description -->
+        {% if ioc.description %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-file-text"></i> Опис
+            </div>
+            <div class="card-body">
+                <p>{{ ioc.description }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tags -->
+        {% if ioc.tags %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-tags"></i> Теги
+            </div>
+            <div class="card-body">
+                {% for tag in ioc.tags.split(',') %}
+                    <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.9em;">{{ tag.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Enrichment Data -->
+        {% if enrichment %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-dark">
+                <i class="bi bi-shield-check"></i> Enrichment Data
+            </div>
+            <div class="card-body">
+                {% if enrichment.get('virustotal') %}
+                <h6><i class="bi bi-virus"></i> VirusTotal</h6>
+                <ul class="mb-3">
+                    {% for key, val in enrichment['virustotal'].items() %}
+                        <li><strong>{{ key }}:</strong> {{ val }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if enrichment.get('abuseipdb') %}
+                <h6><i class="bi bi-globe"></i> AbuseIPDB</h6>
+                <ul class="mb-3">
+                    {% for key, val in enrichment['abuseipdb'].items() %}
+                        <li><strong>{{ key }}:</strong> {{ val }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if not enrichment.get('virustotal') and not enrichment.get('abuseipdb') %}
+                <pre class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">{{ enrichment|tojson(indent=2) }}</pre>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

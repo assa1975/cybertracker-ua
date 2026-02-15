@@ -7,7 +7,7 @@ import logging
 from flask import Blueprint, jsonify, request
 
 from graph_db import is_available, execute_query
-from graph_sync import sync_all_unsynced, get_graph_overview
+from graph_sync import sync_all_unsynced, sync_all_to_graph, get_graph_overview
 from graph_analysis import (
     build_networkx_graph, compute_centrality,
     detect_communities, find_shortest_path,
@@ -108,7 +108,10 @@ def graph_data():
                        n.incident_id AS incident_id,
                        n.technique_id AS technique_id,
                        n.value AS value, n.type AS ioc_type,
-                       n.severity AS severity, n.date AS date
+                       n.severity AS severity, n.date AS date,
+                       n.doc_id AS doc_id, n.aliases AS aliases,
+                       n.role AS role, n.country AS country,
+                       n.org_type AS org_type, n.doc_type AS doc_type
                 LIMIT $limit
             """
             params = {'limit': limit}
@@ -134,25 +137,36 @@ def graph_data():
                 n.get('title') or
                 n.get('technique_id') or
                 n.get('value') or
-                str(n.get('incident_id', ''))
+                str(n.get('incident_id') or n.get('doc_id') or '')
             )
             # Truncate long labels
             if label and len(label) > 40:
                 label = label[:37] + '...'
 
-            cy_nodes.append({
-                'data': {
-                    'id': str(n['id']),
-                    'label': label or str(n['id']),
-                    'type': node_type,
-                    'incident_id': n.get('incident_id'),
-                    'technique_id': n.get('technique_id'),
-                    'value': n.get('value'),
-                    'ioc_type': n.get('ioc_type'),
-                    'severity': n.get('severity'),
-                    'date': str(n.get('date', '')),
-                }
-            })
+            node_data = {
+                'id': str(n['id']),
+                'label': label or str(n['id']),
+                'type': node_type,
+                'incident_id': n.get('incident_id'),
+                'technique_id': n.get('technique_id'),
+                'value': n.get('value'),
+                'ioc_type': n.get('ioc_type'),
+                'severity': n.get('severity'),
+                'date': str(n.get('date', '')),
+            }
+            # Add extra properties for new node types
+            if n.get('doc_id'):
+                node_data['doc_id'] = n['doc_id']
+            if n.get('aliases'):
+                node_data['aliases'] = n['aliases']
+            if n.get('role'):
+                node_data['role'] = n['role']
+            if n.get('country'):
+                node_data['country'] = n['country']
+            if n.get('org_type'):
+                node_data['org_type'] = n['org_type']
+
+            cy_nodes.append({'data': node_data})
 
         cy_edges = []
         for e in edges:
@@ -261,6 +275,6 @@ def graph_path():
 
 @graph_bp.route('/api/graph/sync', methods=['POST'])
 def graph_sync():
-    """Trigger Neo4j sync."""
-    result = sync_all_unsynced()
+    """Trigger Neo4j sync for all data types."""
+    result = sync_all_to_graph()
     return jsonify(result)

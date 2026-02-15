@@ -37,6 +37,26 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('persons_list') }}">
+                            <i class="bi bi-people-fill"></i> Люди
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('organizations_list') }}">
+                            <i class="bi bi-building"></i> Організації
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ioc_list') }}">
+                            <i class="bi bi-fingerprint"></i> IOC
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('documents_list') }}">
+                            <i class="bi bi-file-earmark-pdf"></i> Документи
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('graph_page') }}">
                             <i class="bi bi-diagram-3-fill"></i> Граф
                         </a>
@@ -49,6 +69,9 @@
                     <a class="btn btn-outline-light btn-sm" href="{{ url_for('trigger_fetch_twitter') }}" title="Завантажити Twitter">
                         <i class="bi bi-twitter-x"></i>
                     </a>
+                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('trigger_fetch_linkedin') }}" title="Завантажити LinkedIn">
+                        <i class="bi bi-linkedin"></i>
+                    </a>
                     <a class="btn btn-outline-light btn-sm" href="{{ url_for('trigger_scrape') }}" title="Скрапити статті">
                         <i class="bi bi-download"></i>
                     </a>
@@ -58,8 +81,14 @@
                     <a class="btn btn-outline-danger btn-sm" href="{{ url_for('trigger_enrich') }}" title="Збагатити IOC">
                         <i class="bi bi-shield-check"></i>
                     </a>
+                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('trigger_fetch_ioc_feeds') }}" title="IOC фіди">
+                        <i class="bi bi-fingerprint"></i>
+                    </a>
                     <a class="btn btn-outline-success btn-sm" href="{{ url_for('trigger_report') }}" title="Звіт">
                         <i class="bi bi-file-earmark-word"></i>
+                    </a>
+                    <a class="btn btn-outline-warning btn-sm" href="{{ url_for('trigger_sync_all_graph') }}" title="Синхр. все в Neo4j">
+                        <i class="bi bi-diagram-3"></i>
                     </a>
                 </div>
             </div>

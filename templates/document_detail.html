@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Документ: {{ doc.original_name[:50] }} | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('documents_list') }}">Документи</a></li>
+        <li class="breadcrumb-item active">{{ doc.original_name[:60] }}{% if doc.original_name|length > 60 %}...{% endif %}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Document Info Card -->
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-file-earmark-pdf"></i> Інформація
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <small class="text-muted">Файл</small><br>
+                    <strong>{{ doc.original_name }}</strong>
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Тип / Розмір</small><br>
+                    <span class="badge bg-secondary">{{ doc.doc_type|upper }}</span>
+                    {{ (doc.file_size / 1024)|int }} KB
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Сторінок</small><br>
+                    <strong>{{ doc.page_count }}</strong>
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Мова</small><br>
+                    {% if doc.language == 'uk' %}
+                        <span class="badge bg-info text-dark">Українська</span>
+                    {% elif doc.language == 'en' %}
+                        <span class="badge bg-success">English</span>
+                    {% elif doc.language == 'ru' %}
+                        <span class="badge bg-warning text-dark">Русский</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Невизначено</span>
+                    {% endif %}
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">IOC знайдено</small><br>
+                    {% if doc.ioc_count > 0 %}
+                        <span class="badge bg-danger fs-6">{{ doc.ioc_count }}</span>
+                    {% else %}
+                        <span class="text-muted">0</span>
+                    {% endif %}
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Додано</small><br>
+                    {{ doc.created_at.strftime('%d.%m.%Y %H:%M') if doc.created_at else '—' }}
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Neo4j</small><br>
+                    {% if doc.neo4j_synced %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Синхронізовано</span>
+                    {% else %}
+                        <a href="{{ url_for('document_sync_graph', doc_id=doc.id) }}" class="btn btn-warning btn-sm">
+                            <i class="bi bi-diagram-3"></i> Синхронізувати в граф
+                        </a>
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+
+        <!-- MITRE Techniques -->
+        {% if doc.mitre_techniques %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-shield-exclamation"></i> MITRE ATT&CK
+            </div>
+            <div class="card-body">
+                {% for tid in doc.mitre_techniques.split(',') %}
+                    <span class="badge bg-purple text-white border me-1 mb-1" style="font-size: 0.85em; background-color: #6f42c1;">{{ tid.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Keywords Cloud -->
+        {% if keywords %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-tags"></i> Ключові слова
+            </div>
+            <div class="card-body">
+                {% for word, count in keywords.items() %}
+                    {% if loop.index <= 20 %}
+                    <span class="badge bg-light text-dark border me-1 mb-1"
+                          style="font-size: {{ [0.7 + (count / 50), 1.2]|min }}em;">
+                        {{ word }} <small class="text-muted">({{ count }})</small>
+                    </span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-8">
+        <!-- Summary -->
+        {% if doc.summary %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-card-text"></i> Аналіз документа
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ doc.summary }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Threat Actors -->
+        {% if doc.threat_actors %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-person-fill-exclamation"></i> Загрозливі актори
+            </div>
+            <div class="card-body">
+                {% for actor in doc.threat_actors.split(',') %}
+                    <span class="badge bg-danger me-2 mb-2" style="font-size: 0.9em;">
+                        <i class="bi bi-person-fill"></i> {{ actor.strip() }}
+                    </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Attack Types & Sectors -->
+        {% if doc.attack_types or doc.target_sectors %}
+        <div class="row mb-4">
+            {% if doc.attack_types %}
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-lightning-fill"></i> Типи атак
+                    </div>
+                    <div class="card-body">
+                        {% for at in doc.attack_types.split(',') %}
+                            <span class="badge bg-warning text-dark me-1 mb-1" style="font-size: 0.85em;">{{ at.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if doc.target_sectors %}
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-building"></i> Цільові сектори
+                    </div>
+                    <div class="card-body">
+                        {% for sector in doc.target_sectors.split(',') %}
+                            <span class="badge bg-success me-1 mb-1" style="font-size: 0.85em;">{{ sector.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- IOC Indicators -->
+        {% if ioc_data %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-fingerprint"></i> IOC Індикатори ({{ doc.ioc_count }})
+            </div>
+            <div class="card-body">
+                {% set ioc_type_map = {'ipv4': 'IPv4', 'ipv6': 'IPv6', 'domains': 'Домени', 'urls': 'URL', 'md5': 'MD5', 'sha1': 'SHA1', 'sha256': 'SHA256', 'cve': 'CVE', 'emails': 'Email'} %}
+
+                <ul class="nav nav-tabs mb-3" id="iocTabs" role="tablist">
+                    {% for ioc_type, values in ioc_data.items() %}
+                        {% if values %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {% if loop.first %}active{% endif %}" id="tab-{{ ioc_type }}"
+                                    data-bs-toggle="tab" data-bs-target="#content-{{ ioc_type }}" type="button">
+                                {{ ioc_type_map.get(ioc_type, ioc_type) }}
+                                <span class="badge bg-secondary">{{ values|length }}</span>
+                            </button>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+
+                <div class="tab-content" id="iocTabContent">
+                    {% for ioc_type, values in ioc_data.items() %}
+                        {% if values %}
+                        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="content-{{ ioc_type }}">
+                            <div class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;">
+                                {% for val in values[:100] %}
+                                    <code class="d-block text-break mb-1" style="font-size: 0.85em;">{{ val }}</code>
+                                {% endfor %}
+                                {% if values|length > 100 %}
+                                    <small class="text-muted mt-2 d-block">...та ще {{ values|length - 100 }} записів</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Extracted Text Preview -->
+        {% if doc.extracted_text %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <span><i class="bi bi-file-text"></i> Витягнутий текст</span>
+                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#textPreview">
+                    <i class="bi bi-eye"></i> Показати/Сховати
+                </button>
+            </div>
+            <div class="collapse" id="textPreview">
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded" style="max-height: 500px; overflow-y: auto; white-space: pre-wrap; font-size: 0.8em;">{{ doc.extracted_text[:10000] }}{% if doc.extracted_text|length > 10000 %}
+
+... (показано перші 10000 символів з {{ doc.extracted_text|length }}){% endif %}</pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

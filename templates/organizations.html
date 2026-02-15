@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Організації | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-building"></i> Threat Organizations <span class="badge bg-secondary">{{ total }}</span></h2>
+
+<!-- Filter Form -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('organizations_list') }}">
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="q" value="{{ q }}"
+                           placeholder="Пошук за назвою або alias...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="org_type">
+                        <option value="">Тип організації</option>
+                        {% for t in all_types %}
+                            <option value="{{ t }}" {% if org_type == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Фільтрувати
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ url_for('organizations_list') }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Скинути
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Organizations Cards -->
+{% if orgs %}
+<div class="row">
+    {% for o in orgs %}
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100 cursor-pointer" onclick="window.location='{{ url_for('organization_detail', org_id=o.id) }}'">
+            <div class="card-header d-flex justify-content-between align-items-center
+                {% if o.org_type == 'Військова частина ГРУ' %}bg-danger text-white
+                {% elif o.org_type == 'Спецслужба' %}bg-dark text-white
+                {% elif o.org_type == 'Компанія-прокладка' %}bg-warning text-dark
+                {% elif o.org_type == 'Фейковий акаунт' %}bg-info text-dark
+                {% else %}bg-secondary text-white{% endif %}">
+                <strong>{{ o.name }}</strong>
+                <span class="badge bg-light text-dark">{{ o.org_type or '' }}</span>
+            </div>
+            <div class="card-body">
+                {% if o.aliases %}
+                    <p class="mb-1"><strong>Alias:</strong> {{ o.aliases }}</p>
+                {% endif %}
+                {% if o.country %}
+                    <p class="mb-1"><strong>Країна:</strong> {{ o.country }}</p>
+                {% endif %}
+                {% if o.parent_org %}
+                    <p class="mb-1"><strong>Головна організація:</strong> {{ o.parent_org }}</p>
+                {% endif %}
+                {% if o.members_count %}
+                    <p class="mb-1"><strong>Відомих членів:</strong> {{ o.members_count }}</p>
+                {% endif %}
+                <p class="text-muted small mb-1">{{ o.description[:200] if o.description else '' }}{% if o.description and o.description|length > 200 %}...{% endif %}</p>
+                <a href="{{ url_for('trigger_org_report', org_id=o.id) }}"
+                   class="btn btn-outline-success btn-sm"
+                   onclick="event.stopPropagation();"
+                   title="Згенерувати DOCX звіт">
+                    <i class="bi bi-file-earmark-word"></i> Звіт
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-building fs-1"></i>
+    <p class="mt-2">Організацій не знайдено. <a href="{{ url_for('trigger_import_threat_intel') }}">Імпортувати дані</a></p>
+</div>
+{% endif %}
+{% endblock %}

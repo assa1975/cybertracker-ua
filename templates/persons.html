@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Люди | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-people-fill"></i> Threat Actors <span class="badge bg-secondary">{{ total }}</span></h2>
+
+<!-- Search Card -->
+<div class="card shadow-sm mb-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <i class="bi bi-search"></i> Пошук особи за прізвищем
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-8">
+                <input type="text" class="form-control form-control-lg" id="personSearch"
+                       placeholder="Введіть прізвище (наприклад: Стигал, Денисов, Пунтус)..."
+                       autocomplete="off">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-danger btn-lg w-100" onclick="searchPerson()">
+                    <i class="bi bi-search"></i> Знайти
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('trigger_import_threat_intel') }}" class="btn btn-outline-secondary btn-lg w-100" title="Імпорт даних">
+                    <i class="bi bi-cloud-download"></i> Імпорт
+                </a>
+            </div>
+        </div>
+
+        <!-- Search Results Card -->
+        <div id="searchResults" class="mt-3" style="display: none;"></div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('persons_list') }}">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="q" value="{{ q }}"
+                           placeholder="Пошук за ім'ям або позивним...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="role">
+                        <option value="">Роль</option>
+                        {% for r in all_roles %}
+                            <option value="{{ r }}" {% if role == r %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="org">
+                        <option value="">Організація</option>
+                        {% for o in all_orgs %}
+                            <option value="{{ o }}" {% if org == o %}selected{% endif %}>{{ o }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                </div>
+                <div class="col-md-1">
+                    <a href="{{ url_for('persons_list') }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Persons Table -->
+{% if persons %}
+<div class="table-responsive">
+    <table class="table table-hover shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th style="width: 50px;"></th>
+                <th>Ім'я</th>
+                <th>Alias</th>
+                <th>Роль</th>
+                <th>Організація</th>
+                <th>Країна</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in persons %}
+            <tr class="cursor-pointer" onclick="window.location='{{ url_for('person_detail', person_id=p.id) }}'">
+                <td class="text-center">
+                    {% if p.photo_url %}
+                        <img src="{{ p.photo_url }}" alt="" class="rounded-circle" width="36" height="36">
+                    {% else %}
+                        <i class="bi bi-person-circle fs-4 text-muted"></i>
+                    {% endif %}
+                </td>
+                <td><strong>{{ p.name }}</strong></td>
+                <td><small class="text-muted">{{ p.aliases or '—' }}</small></td>
+                <td><span class="badge bg-info text-dark">{{ p.role or '—' }}</span></td>
+                <td><small>{{ p.organization or '—' }}</small></td>
+                <td>{{ p.country or '—' }}</td>
+                <td>
+                    {% if p.status %}
+                        {% if 'Арешт' in p.status %}
+                            <span class="badge bg-danger">{{ p.status }}</span>
+                        {% elif 'Актив' in p.status %}
+                            <span class="badge bg-success">{{ p.status }}</span>
+                        {% elif 'Звільн' in p.status %}
+                            <span class="badge bg-warning text-dark">{{ p.status }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ p.status }}</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-people fs-1"></i>
+    <p class="mt-2">Осіб не знайдено. <a href="{{ url_for('trigger_import_threat_intel') }}">Імпортувати дані</a></p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const searchInput = document.getElementById('personSearch');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        searchPerson();
+    }
+});
+
+function searchPerson() {
+    const q = searchInput.value.trim();
+    if (!q) return;
+
+    fetch('/api/persons/search?q=' + encodeURIComponent(q))
+        .then(r => r.json())
+        .then(data => {
+            if (data.results.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Особу "${q}" не знайдено в базі.
+                    </div>`;
+                searchResults.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            data.results.forEach(p => {
+                let operations = [];
+                try { operations = JSON.parse(p.operations || '[]'); } catch(e) {}
+
+                let statusBadge = '';
+                if (p.status) {
+                    let cls = 'bg-secondary';
+                    if (p.status.includes('Арешт')) cls = 'bg-danger';
+                    else if (p.status.includes('Актив')) cls = 'bg-success';
+                    else if (p.status.includes('Звільн')) cls = 'bg-warning text-dark';
+                    statusBadge = `<span class="badge ${cls}">${p.status}</span>`;
+                }
+
+                html += `
+                <div class="card mb-3 border-danger shadow">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 text-center">
+                                ${p.photo_url
+                                    ? `<img src="${p.photo_url}" class="rounded-circle mb-2" width="100" height="100">`
+                                    : `<i class="bi bi-person-circle" style="font-size: 80px; color: #dc3545;"></i>`
+                                }
+                            </div>
+                            <div class="col-md-10">
+                                <h4 class="card-title">
+                                    <a href="/persons/${p.id}" class="text-decoration-none">${p.name}</a>
+                                    ${statusBadge}
+                                </h4>
+                                ${p.aliases ? `<p class="mb-1"><strong>Alias:</strong> ${p.aliases}</p>` : ''}
+                                <p class="mb-1">
+                                    <strong>Роль:</strong> <span class="badge bg-info text-dark">${p.role || '—'}</span>
+                                    &nbsp; <strong>Організація:</strong> ${p.organization || '—'}
+                                    &nbsp; <strong>Країна:</strong> ${p.country || '—'}
+                                </p>
+                                <p class="text-muted small mb-2">${p.description || ''}</p>
+                                ${operations.length > 0 ? `
+                                    <p class="mb-0"><strong>Операції:</strong></p>
+                                    <ul class="small mb-0">
+                                        ${operations.map(op => `<li>${op}</li>`).join('')}
+                                    </ul>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            searchResults.innerHTML = html;
+            searchResults.style.display = 'block';
+        })
+        .catch(err => {
+            searchResults.innerHTML = `<div class="alert alert-danger">Помилка пошуку: ${err}</div>`;
+            searchResults.style.display = 'block';
+        });
+}
+</script>
+{% endblock %}

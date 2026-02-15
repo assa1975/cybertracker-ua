@@ -13,6 +13,12 @@ const NODE_COLORS = {
     MITRETechnique: '#6f42c1',
     IOCIndicator: '#6c757d',
     Source: '#0dcaf0',
+    // New node types
+    Person: '#e83e8c',
+    Organization: '#20c997',
+    Document: '#ffc107',
+    Country: '#17a2b8',
+    Operation: '#795548',
 };
 
 // Node shapes by type
@@ -24,6 +30,12 @@ const NODE_SHAPES = {
     MITRETechnique: 'triangle',
     IOCIndicator: 'round-octagon',
     Source: 'star',
+    // New node types
+    Person: 'ellipse',
+    Organization: 'round-rectangle',
+    Document: 'rectangle',
+    Country: 'pentagon',
+    Operation: 'barrel',
 };
 
 let cy = null;

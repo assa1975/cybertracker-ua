@@ -136,11 +136,20 @@ def init_graph_schema():
         "CREATE CONSTRAINT sector_name IF NOT EXISTS FOR (s:Sector) REQUIRE s.name IS UNIQUE",
         "CREATE CONSTRAINT mitre_id IF NOT EXISTS FOR (m:MITRETechnique) REQUIRE m.technique_id IS UNIQUE",
         "CREATE CONSTRAINT ioc_value IF NOT EXISTS FOR (c:IOCIndicator) REQUIRE c.value IS UNIQUE",
+        # New node types
+        "CREATE CONSTRAINT person_name IF NOT EXISTS FOR (p:Person) REQUIRE p.name IS UNIQUE",
+        "CREATE CONSTRAINT org_name IF NOT EXISTS FOR (o:Organization) REQUIRE o.name IS UNIQUE",
+        "CREATE CONSTRAINT doc_id IF NOT EXISTS FOR (d:Document) REQUIRE d.doc_id IS UNIQUE",
+        "CREATE CONSTRAINT country_name IF NOT EXISTS FOR (c:Country) REQUIRE c.name IS UNIQUE",
+        "CREATE CONSTRAINT operation_name IF NOT EXISTS FOR (op:Operation) REQUIRE op.name IS UNIQUE",
 
         # Indexes for search
         "CREATE INDEX incident_date IF NOT EXISTS FOR (i:Incident) ON (i.date)",
         "CREATE INDEX incident_severity IF NOT EXISTS FOR (i:Incident) ON (i.severity)",
         "CREATE INDEX ioc_type IF NOT EXISTS FOR (c:IOCIndicator) ON (c.type)",
+        "CREATE INDEX doc_type IF NOT EXISTS FOR (d:Document) ON (d.doc_type)",
+        "CREATE INDEX person_role IF NOT EXISTS FOR (p:Person) ON (p.role)",
+        "CREATE INDEX org_type IF NOT EXISTS FOR (o:Organization) ON (o.org_type)",
     ]
 
     success_count = 0

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}{{ person.name }} | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('persons_list') }}">Люди</a></li>
+        <li class="breadcrumb-item active">{{ person.name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Photo & Status Card -->
+    <div class="col-md-3">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center">
+                {% if person.photo_url %}
+                    <img src="{{ person.photo_url }}" class="rounded-circle mb-3" width="150" height="150" alt="{{ person.name }}">
+                {% else %}
+                    <i class="bi bi-person-circle" style="font-size: 120px; color: #dc3545;"></i>
+                {% endif %}
+                <h4 class="card-title mt-2">{{ person.name }}</h4>
+                {% if person.aliases %}
+                    <p class="text-muted small">{{ person.aliases }}</p>
+                {% endif %}
+                {% if person.status %}
+                    {% if 'Арешт' in person.status %}
+                        <span class="badge bg-danger fs-6">{{ person.status }}</span>
+                    {% elif 'Актив' in person.status %}
+                        <span class="badge bg-success fs-6">{{ person.status }}</span>
+                    {% elif 'Звільн' in person.status %}
+                        <span class="badge bg-warning text-dark fs-6">{{ person.status }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary fs-6">{{ person.status }}</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Info -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-info-circle"></i> Інформація
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <small class="text-muted">Роль</small><br>
+                    <span class="badge bg-info text-dark">{{ person.role or '—' }}</span>
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Організація</small><br>
+                    {{ person.organization or '—' }}
+                </li>
+                <li class="list-group-item">
+                    <small class="text-muted">Країна</small><br>
+                    {{ person.country or '—' }}
+                </li>
+                {% if person.source_url %}
+                <li class="list-group-item">
+                    <small class="text-muted">Джерело</small><br>
+                    <a href="{{ person.source_url }}" target="_blank" class="small">The Insider</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <!-- Description -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-file-text"></i> Досьє
+            </div>
+            <div class="card-body">
+                <p>{{ person.description or 'Інформація відсутня.' }}</p>
+            </div>
+        </div>
+
+        <!-- Operations -->
+        {% if operations %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-lightning-fill"></i> Відомі операції
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    {% for op in operations %}
+                        <li>{{ op }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Related Persons -->
+        {% if related %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-people"></i> Пов'язані особи (та сама організація)
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ім'я</th>
+                                <th>Роль</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in related %}
+                            <tr class="cursor-pointer" onclick="window.location='{{ url_for('person_detail', person_id=r.id) }}'">
+                                <td><strong>{{ r.name }}</strong></td>
+                                <td><span class="badge bg-info text-dark">{{ r.role or '—' }}</span></td>
+                                <td>
+                                    {% if r.status %}
+                                        {% if 'Арешт' in r.status %}
+                                            <span class="badge bg-danger">{{ r.status }}</span>
+                                        {% elif 'Актив' in r.status %}
+                                            <span class="badge bg-success">{{ r.status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ r.status }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

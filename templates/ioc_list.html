@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}IOC Indicators | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-fingerprint"></i> IOC Indicators <span class="badge bg-secondary">{{ total }}</span></h2>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary"><i class="bi bi-database"></i></h5>
+                <h3>{{ total_all }}</h3>
+                <small class="text-muted">Всього IOC</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title text-danger"><i class="bi bi-exclamation-triangle-fill"></i></h5>
+                <h3>{{ critical_count }}</h3>
+                <small class="text-muted">Критичних</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info"><i class="bi bi-collection"></i></h5>
+                <h3>{{ sources_count }}</h3>
+                <small class="text-muted">Джерел</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success"><i class="bi bi-clock-history"></i></h5>
+                <small class="fw-bold">{{ last_update }}</small><br>
+                <small class="text-muted">Останнє оновлення</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('ioc_list') }}">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="q" value="{{ q }}"
+                           placeholder="Пошук IOC значення, теги...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="ioc_type">
+                        <option value="">Тип IOC</option>
+                        {% for t in all_types %}
+                            <option value="{{ t }}" {% if ioc_type == t %}selected{% endif %}>
+                                {{ type_labels.get(t, t) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="source">
+                        <option value="">Джерело</option>
+                        {% for s in all_sources %}
+                            <option value="{{ s }}" {% if source == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="threat_level">
+                        <option value="">Рівень загрози</option>
+                        {% for lvl in threat_levels %}
+                            <option value="{{ lvl }}" {% if threat_level == lvl %}selected{% endif %}>
+                                {{ threat_level_labels.get(lvl, lvl) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <div class="d-flex gap-1">
+                        <a href="{{ url_for('ioc_list') }}" class="btn btn-outline-secondary flex-fill" title="Скинути">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                        <a href="{{ url_for('trigger_fetch_ioc_feeds') }}" class="btn btn-warning flex-fill" title="Оновити фіди">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </a>
+                        <a href="{{ url_for('trigger_ioc_report') }}" class="btn btn-success flex-fill" title="DOCX Звіт">
+                            <i class="bi bi-file-earmark-word"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- IOC Table -->
+{% if iocs %}
+<div class="table-responsive">
+    <table class="table table-hover shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Значення</th>
+                <th>Тип</th>
+                <th>Джерело</th>
+                <th>Дата</th>
+                <th>Рівень загрози</th>
+                <th>Теги</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ioc in iocs %}
+            <tr class="cursor-pointer" onclick="window.location='{{ url_for('ioc_detail', ioc_id=ioc.id) }}'">
+                <td>
+                    <code class="text-break" style="font-size: 0.85em;">{{ ioc.value[:70] }}{% if ioc.value|length > 70 %}...{% endif %}</code>
+                </td>
+                <td>
+                    <span class="badge bg-info text-dark">{{ type_labels.get(ioc.ioc_type, ioc.ioc_type) }}</span>
+                </td>
+                <td><small>{{ ioc.source or '' }}</small></td>
+                <td class="text-nowrap">
+                    <small>{{ ioc.last_seen.strftime('%d.%m.%Y') if ioc.last_seen else '' }}</small>
+                </td>
+                <td>
+                    {% if ioc.threat_level == 'critical' %}
+                        <span class="badge bg-danger">{{ threat_level_labels.get(ioc.threat_level, '') }}</span>
+                    {% elif ioc.threat_level == 'high' %}
+                        <span class="badge bg-warning text-dark">{{ threat_level_labels.get(ioc.threat_level, '') }}</span>
+                    {% elif ioc.threat_level == 'medium' %}
+                        <span class="badge bg-primary">{{ threat_level_labels.get(ioc.threat_level, '') }}</span>
+                    {% elif ioc.threat_level == 'low' %}
+                        <span class="badge bg-success">{{ threat_level_labels.get(ioc.threat_level, '') }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ threat_level_labels.get(ioc.threat_level, 'N/A') }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if ioc.tags %}
+                        {% for tag in ioc.tags.split(',')[:3] %}
+                            <span class="badge bg-light text-dark border" style="font-size: 0.7em;">{{ tag.strip()[:20] }}</span>
+                        {% endfor %}
+                        {% if ioc.tags.split(',')|length > 3 %}
+                            <span class="badge bg-light text-muted border" style="font-size: 0.7em;">+{{ ioc.tags.split(',')|length - 3 }}</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page - 1 }}&q={{ q }}&ioc_type={{ ioc_type }}&source={{ source }}&threat_level={{ threat_level }}">
+                &laquo; Назад
+            </a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+            {% if p >= page - 3 and p <= page + 3 %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}&q={{ q }}&ioc_type={{ ioc_type }}&source={{ source }}&threat_level={{ threat_level }}">
+                    {{ p }}
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page + 1 }}&q={{ q }}&ioc_type={{ ioc_type }}&source={{ source }}&threat_level={{ threat_level }}">
+                Вперед &raquo;
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-fingerprint fs-1"></i>
+    <p class="mt-2">IOC індикаторів не знайдено.</p>
+    <a href="{{ url_for('trigger_fetch_ioc_feeds') }}" class="btn btn-primary mt-2">
+        <i class="bi bi-arrow-repeat"></i> Завантажити IOC фіди
+    </a>
+</div>
+{% endif %}
+{% endblock %}

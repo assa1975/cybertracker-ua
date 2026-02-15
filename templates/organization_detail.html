@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{{ org.name }} | Cyber Tracker UA{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('organizations_list') }}">Організації</a></li>
+        <li class="breadcrumb-item active">{{ org.name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Info Card -->
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header
+                {% if org.org_type == 'Військова частина ГРУ' %}bg-danger text-white
+                {% elif org.org_type == 'Спецслужба' %}bg-dark text-white
+                {% elif org.org_type == 'Компанія-прокладка' %}bg-warning text-dark
+                {% elif org.org_type == 'Фейковий акаунт' %}bg-info text-dark
+                {% else %}bg-secondary text-white{% endif %}">
+                <i class="bi bi-building"></i> {{ org.name }}
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <small class="text-muted">Тип</small><br>
+                    <span class="badge
+                        {% if org.org_type == 'Військова частина ГРУ' %}bg-danger
+                        {% elif org.org_type == 'Спецслужба' %}bg-dark
+                        {% elif org.org_type == 'Компанія-прокладка' %}bg-warning text-dark
+                        {% else %}bg-info text-dark{% endif %}">
+                        {{ org.org_type or '—' }}
+                    </span>
+                </li>
+                {% if org.aliases %}
+                <li class="list-group-item">
+                    <small class="text-muted">Альтернативні назви</small><br>
+                    {{ org.aliases }}
+                </li>
+                {% endif %}
+                <li class="list-group-item">
+                    <small class="text-muted">Країна</small><br>
+                    {{ org.country or '—' }}
+                </li>
+                {% if org.parent_org %}
+                <li class="list-group-item">
+                    <small class="text-muted">Головна організація</small><br>
+                    {{ org.parent_org }}
+                </li>
+                {% endif %}
+                {% if org.members_count %}
+                <li class="list-group-item">
+                    <small class="text-muted">Відомих членів</small><br>
+                    <strong>{{ org.members_count }}</strong>
+                </li>
+                {% endif %}
+                {% if org.source_url %}
+                <li class="list-group-item">
+                    <small class="text-muted">Джерело</small><br>
+                    <a href="{{ org.source_url }}" target="_blank" class="small">The Insider</a>
+                </li>
+                {% endif %}
+            </ul>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('trigger_org_report', org_id=org.id) }}"
+                   class="btn btn-success btn-sm w-100"
+                   title="Згенерувати DOCX звіт за членами організації">
+                    <i class="bi bi-file-earmark-word"></i> Звіт за організацією
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-8">
+        <!-- Description -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-file-text"></i> Опис
+            </div>
+            <div class="card-body">
+                <p>{{ org.description or 'Інформація відсутня.' }}</p>
+            </div>
+        </div>
+
+        <!-- Operations -->
+        {% if operations %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-lightning-fill"></i> Відомі операції
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    {% for op in operations %}
+                        <li>{{ op }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Members -->
+        {% if members %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-people-fill"></i> Відомі члени ({{ members|length }})
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th></th>
+                                <th>Ім'я</th>
+                                <th>Alias</th>
+                                <th>Роль</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in members %}
+                            <tr class="cursor-pointer" onclick="window.location='{{ url_for('person_detail', person_id=m.id) }}'">
+                                <td class="text-center">
+                                    {% if m.photo_url %}
+                                        <img src="{{ m.photo_url }}" class="rounded-circle" width="30" height="30">
+                                    {% else %}
+                                        <i class="bi bi-person-circle text-muted"></i>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ m.name }}</strong></td>
+                                <td><small class="text-muted">{{ m.aliases or '—' }}</small></td>
+                                <td><span class="badge bg-info text-dark">{{ m.role or '—' }}</span></td>
+                                <td>
+                                    {% if m.status %}
+                                        {% if 'Арешт' in m.status %}
+                                            <span class="badge bg-danger">{{ m.status }}</span>
+                                        {% elif 'Актив' in m.status %}
+                                            <span class="badge bg-success">{{ m.status }}</span>
+                                        {% elif 'Звільн' in m.status %}
+                                            <span class="badge bg-warning text-dark">{{ m.status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ m.status }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
